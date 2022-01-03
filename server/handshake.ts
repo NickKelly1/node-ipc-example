@@ -7,6 +7,7 @@ import * as CtoS from '../shared/ctos';
 import * as StoC from '../shared/stoc';
 import * as Comms from '../shared/comms';
 import * as Result from '@nkp/result';
+import { logger } from "../shared/logger";
 
 export async function handleClientHandshake(
   client: Client,
@@ -40,11 +41,11 @@ export async function handleClientHandshake(
     const userMessage$ = new Subject<Comms.Kind>();
     const userMessages = new Bus<Comms.Kind>(userMessage$);
     user = new User(userMessages, users, server, id, client);
-    console.log(`new user connected: ${id}`);
+    logger.info(`new user connected: ${id}`);
     users.set(id, user);
   } else {
     user.addClient(client);
-    console.log(`user ${id} added a new connection ${user.connections}`);
+    logger.info(`user ${id} added a new connection ${user.connections}`);
   }
   client.send(StoC.handshakeConfirmed.create({ id: id }));
 

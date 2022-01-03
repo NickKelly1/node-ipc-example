@@ -4,6 +4,7 @@ import { Client } from "./client";
 import { Observable, Subscription } from "rxjs";
 import assert from 'node:assert'
 import { Bus, ReadonlyBus } from "../shared/bus";
+import { logger } from "../shared/logger";
 
 export class User {
   public messages: ReadonlyBus<Comms.Kind>;
@@ -81,7 +82,7 @@ export class User {
   }
 
   protected _timeout() {
-    console.warn(`session timed out: ${this._id}`);
+    logger.warn(`session timed out: ${this._id}`);
     this.dispose();
   }
 }

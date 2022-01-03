@@ -14,6 +14,7 @@ import { Client } from './client';
 import { Bus } from '../shared/bus';
 import { handleClientHandshake } from './handshake';
 import { Subject, Subscriber, Subscription } from 'rxjs';
+import { logger } from '../shared/logger';
 
 const ipc = new Ipc.IPC();
 ipc.config.silent = true;
@@ -24,7 +25,7 @@ const server: IPCServer = ipc.server;
 server.on('connect', handleConnect);
 process.on('exit', handleProcessExit);
 
-console.log('starting server...');
+logger.info('starting server...');
 server.start();
 
 const users = new Map<string, User>();
@@ -33,12 +34,12 @@ let connections = 0;
 
 async function handleConnect(socket: Socket) {
   connections += 1;
-  console.log('===========================');
-  console.log(`connection ${connections}`);
-  console.log('===========================');
+  logger.info('===========================');
+  logger.info(`connection ${connections}`);
+  logger.info('===========================');
   socket.once('close', () => {
     connections -= 1;
-    console.log(`disconnection ${connections}`);
+    logger.info(`disconnection ${connections}`);
   });
   // request & confirm handshake
   const event$ = new Subject<Events.Kind>();
@@ -49,7 +50,7 @@ async function handleConnect(socket: Socket) {
 
   const result = await handleClientHandshake(client, users);
   if (Result.isFail(result)) {
-    console.warn(`failed handshake: ${result.value}`);
+    logger.warn(`failed handshake: ${result.value}`);
     client.dispose();
     return;
   }
@@ -85,19 +86,19 @@ function handleHandshakeConfirmed(user: User, client: Client) {
     }
 
     else if (CtoS.message.is(comm)) {
-      console.log(`message: ${comm.data.message}`);
+      logger.info(`message: ${comm.data.message}`);
     }
 
     else {
-      console.warn('unhandled client message', comm);
+      logger.warn('unhandled client message', comm);
     }
   }
 }
 
 function handleServerStarted () {
-  console.log('serving');
+  logger.info('serving');
 }
 
 function handleProcessExit() {
-  console.log('exiting');
+  logger.info('exiting');
 }

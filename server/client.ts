@@ -5,6 +5,7 @@ import * as Result from '@nkp/result';
 import { Observable } from "rxjs";
 import { Bus, ReadonlyBus } from "../shared/bus";
 import * as _Events from '../shared/events'
+import { logger } from "../shared/logger";
 
 export class Client {
   readonly events: ReadonlyBus<_Events.Kind>;
@@ -38,7 +39,7 @@ export class Client {
   }
 
   send(message: Comms.Kind): void {
-    console.log('sending:', message.type);
+    logger.info(`<- ${message.type}`);
     this._server.emit(this._socket, 'message', JSON.stringify(message));
   }
 
@@ -61,42 +62,42 @@ export class Client {
     const parse = Comms.parse(packet);
     if (Result.isFail(parse)) {
       const fail = 'failed to parse client message: ';
-      console.warn(fail, parse.value, packet);
+      logger.warn(fail, parse.value, packet);
       return;
     };
     const message = parse.value;
-    console.log('client::on::message', message.type);
+    logger.info(`-> ${message.type}`);
     this._messages.dispatch(message);
   }
 
   protected readonly _handleClose = (hadError: boolean) => {
-    console.log(`client::on::close`, hadError);
+    logger.info(`client::on::close`, hadError);
     this._events.dispatch(Client.Events.close.create({ hadError }));
   }
 
   protected readonly _handleData = (buffer: Buffer) => {
-    console.log('client::on::data');
+    logger.info('client::on::data');
     this._events.dispatch(Client.Events.data.create({ buffer }));
     this._handleMessagePacket(buffer);
   }
 
   protected readonly _handleDrain = () => {
-    console.log('client::on::drain');
+    logger.info('client::on::drain');
     this._events.dispatch(Client.Events.drain.create());
   }
 
   protected readonly _handleEnd = () => {
-    console.log('client::on::drain');
+    logger.info('client::on::drain');
     this._events.dispatch(Client.Events.end.create());
   }
 
   protected readonly _handleError = (err: Error) => {
-    console.log('client::on::error');
+    logger.info('client::on::error');
     this._events.dispatch(Client.Events.err.create({ err }));
   }
 
   protected readonly _handleLookup = (err: Error, address: string, family: string | number, host: string) => {
-    console.log('client::on::lookup');
+    logger.info('client::on::lookup');
     this._events.dispatch(Client.Events.lookup.create({
       err,
       address,
@@ -106,12 +107,12 @@ export class Client {
   }
 
   protected readonly _handleReady = () => {
-    console.log('client::on::ready');
+    logger.info('client::on::ready');
     this._events.dispatch(Client.Events.ready.create());
   }
 
   protected readonly _handleTimeout = () => {
-    console.log('client::on::timeout');
+    logger.info('client::on::timeout');
     this._events.dispatch(Client.Events.timeout.create());
   }
 }

@@ -5,11 +5,13 @@ import { Bus, ReadonlyBus } from "../shared/bus";
 import { IPCClient } from '../shared/types';
 import { Socket } from 'node:net';
 import { DataType, HasData, HasType, TypeKey } from '../shared/type';
+import { logger } from '../shared/logger';
 
 export class Api {
   readonly messages: ReadonlyBus<Comms.Kind>;
   readonly events: ReadonlyBus<_Events.Kind>;
   readonly state: ReadonlyBus<Api.State.Kind>;
+  public id: string | undefined;
 
   constructor(
     protected readonly _events: Bus<_Events.Kind>,
@@ -34,7 +36,7 @@ export class Api {
   }
 
   send(message: Comms.Kind) {
-    console.log('sending:', message.type);
+    logger.info(`<- ${message.type}`);
     this._client.emit('message', JSON.stringify(message));
   }
 
@@ -52,31 +54,31 @@ export class Api {
   protected readonly _handleMessage = (raw: unknown) => {
     const parse = Comms.parse(raw);
     if (Result.isFail(parse)) {
-      console.warn('failed to parse server comm: ', parse.value, raw);
+      logger.warn('failed to parse server comm: ', parse.value, raw);
       return;
     };
     const message = parse.value;
-    console.log('api::on::message', message.type);
+    logger.info(`-> ${message.type}`);
     this._messages.dispatch(message);
   }
 
   protected readonly _handleConnect = () => {
-    console.log('api::on::connect');
+    logger.info('api::on::connect');
     this._events.dispatch(Api.Events.connect.create());
   }
 
   protected readonly _handleError = (err: unknown) => {
-    console.log('api::on::error', (err as any)?.name, (err as any)?.message);
+    logger.info('api::on::error', (err as any)?.name, (err as any)?.message);
     this._events.dispatch(Api.Events.err.create({ err }));
   }
 
   protected readonly _handleDisconnect = () => {
-    console.log('api::on::disconnect');
+    logger.info('api::on::disconnect');
     this._events.dispatch(Api.Events.disconnect.create());
   }
 
   protected readonly _handleDestroy = () => {
-    console.log('api::on::destroy');
+    logger.info('api::on::destroy');
     this._events.dispatch(Api.Events.destroy.create());
   }
 
@@ -84,7 +86,7 @@ export class Api {
     socket: Socket,
     destroyedSocketID: string,
   ) => {
-    console.log('api::on::socket_disconnect');
+    logger.info('api::on::socket_disconnect');
     this._events.dispatch(Api.Events.socketDisconnect.create({
       socket,
       destroyedSocketID,
@@ -92,7 +94,7 @@ export class Api {
   }
 
   protected readonly _handleData = (buffer: Buffer) => {
-    console.log('api::on::data');
+    logger.info('api::on::data');
     this._events.dispatch(Api.Events.data.create({ buffer }));
   }
 

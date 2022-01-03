@@ -54,5 +54,9 @@ export async function handleApiHandshake(
     return Result.fail(reason);
   }
 
+  const id = handshakeConfirmedResponse.data.id;
+
+  api.id = id;
+
   return Result.success(api);
 }
